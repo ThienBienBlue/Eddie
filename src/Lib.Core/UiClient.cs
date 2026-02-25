@@ -27,13 +27,6 @@ namespace Eddie.Core
 			return false;
 		}
 
-		/* // TOCLEAN
-		public virtual Json Command(Json data)
-		{
-			return null;
-		}
-		*/
-
 		public virtual void OnReceive(Json data)
 		{
 			string cmd = data["command"].Value as string;

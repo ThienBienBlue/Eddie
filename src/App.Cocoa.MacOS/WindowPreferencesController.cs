@@ -361,7 +361,7 @@ namespace Eddie.UI.Cocoa.Osx
 			CboAdvancedManifestRefresh.AddItem("Never");
 			CboAdvancedManifestRefresh.AddItem("Every minute");
 			CboAdvancedManifestRefresh.AddItem("Every ten minute");
-			CboAdvancedManifestRefresh.AddItem("Every one hour");
+			CboAdvancedManifestRefresh.AddItem("Every one hour");			
 
             CboAdvancedUpdaterChannel.RemoveAllItems();
             CboAdvancedUpdaterChannel.AddItem("Stable");
@@ -457,12 +457,13 @@ namespace Eddie.UI.Cocoa.Osx
 			GuiUtils.SetHidden(CmdShellExternalView, true);
 			GuiUtils.SetHidden(ChkOpenVpnDirectivesAllowScriptSecurity, true);
 
+			GuiUtils.SetHidden(ChkCliShortcut, true); // Removed, related to CVE-2025-14979
+
             ReadOptions();
 
 			EnableIde();
 
 			RefreshLogPreview();
-
 		}
 
 		public static string RouteDirectionToDescription(string v)
@@ -669,7 +670,7 @@ namespace Eddie.UI.Cocoa.Osx
 			GuiUtils.SetCheck(ChkGeneralStartLast, o.GetBool("servers.startlast"));
 			GuiUtils.SetCheck(ChkGeneralOsxVisible, o.GetBool("gui.osx.visible"));
 			// GuiUtils.SetCheck (ChkGeneralOsxDock, o.GetBool ("gui.osx.dock")); // See this FAQ: https://airvpn.org/topic/13331-its-possible-to-hide-the-icon-in-dock-bar-under-os-x/
-			GuiUtils.SetCheck(ChkCliShortcut, Core.Platform.Instance.FileExists("/usr/local/bin/eddie-cli"));
+			// GuiUtils.SetCheck(ChkCliShortcut, Core.Platform.Instance.FileExists("/usr/local/bin/eddie-cli")); // Removed, related to CVE-2025-14979			
 			GuiUtils.SetCheck(ChkUiSystemBarShowInfo, o.GetBool("gui.osx.sysbar.show_info"));
 			GuiUtils.SetCheck(ChkUiSystemBarShowSpeed, o.GetBool("gui.osx.sysbar.show_speed"));
 			GuiUtils.SetCheck(ChkUiSystemBarShowServer, o.GetBool("gui.osx.sysbar.show_server"));
@@ -980,9 +981,9 @@ namespace Eddie.UI.Cocoa.Osx
             string updaterChannel = o.Get("updater.channel");
             if (updaterChannel == "stable")
                 GuiUtils.SetSelected(CboAdvancedUpdaterChannel, "Stable");
-            else if(updaterChannel == "beta")
+            else if (updaterChannel == "beta")
                 GuiUtils.SetSelected(CboAdvancedUpdaterChannel, "Beta");
-            else if(updaterChannel == "none")
+            else if (updaterChannel == "none")
                 GuiUtils.SetSelected(CboAdvancedUpdaterChannel, "None");
             else
                 GuiUtils.SetSelected(CboAdvancedUpdaterChannel, "Stable");
@@ -1035,7 +1036,7 @@ namespace Eddie.UI.Cocoa.Osx
 		{
             if (GuiUtils.GetSelected(CboStorageMode) == LanguageManager.GetText(LanguageItems.WindowsSettingsStorageModePassword))
             {
-                if( (TxtStoragePassword.StringValue == "") || (TxtStoragePassword.StringValue != TxtStoragePasswordConfirm.StringValue) )
+                if ( (TxtStoragePassword.StringValue == "") || (TxtStoragePassword.StringValue != TxtStoragePasswordConfirm.StringValue) )
                 {
                     GuiUtils.MessageBoxError(LanguageManager.GetText(LanguageItems.WindowsSettingsStoragePasswordMismatch));
                     return false;
@@ -1078,9 +1079,12 @@ namespace Eddie.UI.Cocoa.Osx
 			o.SetBool("gui.osx.visible", GuiUtils.GetCheck(ChkGeneralOsxVisible));
 			// o.SetBool ("gui.osx.dock", GuiUtils.GetCheck (ChkGeneralOsxDock)); // See this FAQ: https://airvpn.org/topic/13331-its-possible-to-hide-the-icon-in-dock-bar-under-os-x/
 
+			// Removed, related to CVE-2025-14979
+			/*
 			string pathCLI = Core.Platform.Instance.GetExecutablePath();
 			pathCLI = pathCLI.Substring(0, pathCLI.Length - 2) + "CLI";
 			Engine.Instance.Elevated.DoCommandSync("shortcut-cli", "action", (GuiUtils.GetCheck(ChkCliShortcut) ? "set" : "del"), "path", pathCLI);
+			*/
 
 			o.SetBool("gui.osx.sysbar.show_info", GuiUtils.GetCheck(ChkUiSystemBarShowInfo));
 			o.SetBool("gui.osx.sysbar.show_speed", GuiUtils.GetCheck(ChkUiSystemBarShowSpeed));
@@ -1089,7 +1093,7 @@ namespace Eddie.UI.Cocoa.Osx
 
 
 
-            if(GuiUtils.GetSelected(CboStorageMode) == LanguageManager.GetText(LanguageItems.WindowsSettingsStorageModeNone))
+            if (GuiUtils.GetSelected(CboStorageMode) == LanguageManager.GetText(LanguageItems.WindowsSettingsStorageModeNone))
 			{
                 s.SaveFormat = "v2n";
             }
@@ -1354,9 +1358,9 @@ namespace Eddie.UI.Cocoa.Osx
             string updaterChannel = GuiUtils.GetSelected(CboAdvancedUpdaterChannel);
             if (updaterChannel == "Stable")
                 o.Set("updater.channel", "stable");
-            else if(updaterChannel == "Beta")
+            else if (updaterChannel == "Beta")
                 o.Set("updater.channel", "beta");
-            else if(updaterChannel == "None")
+            else if (updaterChannel == "None")
                 o.Set("updater.channel", "none");
             else
                 o.Set("updater.channel", "stable");

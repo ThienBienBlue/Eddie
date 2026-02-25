@@ -2,11 +2,12 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-SCRIPTDIR=$(dirname $(realpath "$0"))
 ARCH=$($SCRIPTDIR/../macos_common/get-arch.sh)
 
 ${SCRIPTDIR}/sign.sh "${SCRIPTDIR}/../../deploy/macos_${ARCH}/openvpn" no yes

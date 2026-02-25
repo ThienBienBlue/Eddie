@@ -41,6 +41,9 @@ namespace Eddie.Core
 			Jobs.Add(ProvidersRefresh = new Jobs.ProvidersRefresh());
 			Jobs.Add(RealtimeNetworkStats = new Jobs.RealtimeNetworkStats());
 			Jobs.Add(UpMonitor = new Jobs.UpMonitor());
+
+			foreach (Job j in Jobs)
+				j.OnInit();
 		}
 
 		public void Check()

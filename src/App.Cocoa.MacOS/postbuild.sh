@@ -24,11 +24,11 @@ if [ "$3" == "" ]; then
 fi
 
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-
-BASEPATH=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#BASEPATH=$(dirname $(realpath "$0"))
+BASEPATH="$(cd "$(dirname "$0")" && pwd -P)"
 OUTPATH=$1
 ARCH=$2
 CONFIG=$3

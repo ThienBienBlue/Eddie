@@ -24,6 +24,8 @@ namespace Eddie.Core.Jobs
 {
 	public class Discover : Eddie.Core.Job
 	{
+		private bool m_needBroadcast;
+
 		public override ThreadPriority GetPriority()
 		{
 			return ThreadPriority.Lowest;
@@ -54,10 +56,23 @@ namespace Eddie.Core.Jobs
 				}
 			}
 
+			if (m_needBroadcast)
+			{
+				m_needBroadcast = false;
+				BroadcastStatus();
+			}
+
 			m_timeEvery = 60000;
 		}
 
-		public string GetStatsString()
+		public void BroadcastStatus()
+		{
+			Json j = ToJson();
+			j["command"].Value = "ui.discovery.status";
+			Engine.Instance.UiManager.Broadcast(j);
+		}
+
+		public Json ToJson()
 		{
 			Dictionary<string, ConnectionInfo> servers;
 			lock (Engine.Instance.Connections)
@@ -77,7 +92,16 @@ namespace Eddie.Core.Jobs
 						nPending++;
 				}
 			}
-			return nPending + " pending / " + nTotal;
+			Json j = new Json();
+			j["total"].Value = nTotal;
+			j["pending"].Value = nPending;
+			return j;
+		}
+
+		public string GetStatsString()
+		{
+			Json j = ToJson();
+			return j["pending"].ValueString + " pending / " + j["total"].ValueString + " total";
 		}
 
 		public void InvalidateAll()
@@ -93,6 +117,7 @@ namespace Eddie.Core.Jobs
 			}
 
 			CheckNow();
+			BroadcastStatus();
 		}
 
 		public IpAddresses DiscoverExit()
@@ -213,6 +238,7 @@ namespace Eddie.Core.Jobs
 			}
 
 			connection.LastDiscover = Utils.UnixTimeStamp();
+			m_needBroadcast = true;
 
 			connection.Provider.OnChangeConnection(connection);
 		}

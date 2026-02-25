@@ -62,8 +62,15 @@ function arch_env() {
 		makepkg --printsrcinfo > .SRCINFO
 		echo $PWD
 		mv eddie-${PROJECT}-${VERSION}-1-x86_64.pkg.tar.zst ${DEPLOYPATH}
-		# Deploy to eddie.website
-		${SCRIPTDIR}/../linux_common/deploy.sh ${DEPLOYPATH}
+		
+		if test -n "${EDDIESIGNINGDIR:-}"; then
+			# Deploy		
+			${SCRIPTDIR}/../linux_common/deploy.sh ${DEPLOYPATH}
+
+			# PGP
+			"${SCRIPTDIR}/../linux_common/sign-openpgp.sh" "${DEPLOYPATH}"
+			test -f "${DEPLOYPATH}.asc" && ${SCRIPTDIR}/../linux_common/deploy.sh "${DEPLOYPATH}.asc"
+		fi
 	else
 		if [ "$1" = "git" ]; then
 			echo "Update official repo git edition"
@@ -81,10 +88,10 @@ function arch_env() {
 			fi
 			sed -i "s|{@source}|git+https://github.com/AirVPN/Eddie.git|g" PKGBUILD    
 			sed -i "s|cd \"Eddie-\$pkgver\"|cd \"Eddie\"|g" PKGBUILD
-			if test -f "${SCRIPTDIR}/../signing/aur.key.password.txt"; then # Staff AirVPN
-    			echo if requested, enter $(cat "${SCRIPTDIR}/../signing/aur.key.password.txt") as passphrase
+			if test -f "${EDDIESIGNINGDIR}/aur.key.password.txt"; then # Staff AirVPN
+    			echo if requested, enter $(cat "${EDDIESIGNINGDIR}/aur.key.password.txt") as passphrase
 			fi
-			git -c core.sshCommand="ssh -i ${SCRIPTDIR}/../signing/aur.key" clone ssh://aur@aur.archlinux.org/eddie-${PROJECT}-git.git
+			git -c core.sshCommand="ssh -i ${EDDIESIGNINGDIR}/aur.key" clone ssh://aur@aur.archlinux.org/eddie-${PROJECT}-git.git
 			cd eddie-${PROJECT}-git
 			cp ../PKGBUILD .
 			cp ../eddie-${PROJECT}.install .
@@ -105,10 +112,10 @@ function arch_env() {
 				sed -i "s|{@pkgmakedepends}|(git cmake patchelf dotnet-sdk mono-msbuild mono desktop-file-utils)|g" PKGBUILD
 			fi
 			sed -i "s|{@source}|https://github.com/AirVPN/Eddie/archive/${VERSIONSTABLE}.tar.gz|g" PKGBUILD    
-			if test -f "${SCRIPTDIR}/../signing/aur.key.password.txt"; then # Staff AirVPN
-    			echo if requested, enter $(cat "${SCRIPTDIR}/../signing/aur.key.password.txt") as passphrase
+			if test -f "${EDDIESIGNINGDIR}/aur.key.password.txt"; then # Staff AirVPN
+    			echo if requested, enter $(cat "${EDDIESIGNINGDIR}/aur.key.password.txt") as passphrase
 			fi
-			git -c core.sshCommand="ssh -i ${SCRIPTDIR}/../signing/aur.key" clone ssh://aur@aur.archlinux.org/eddie-${PROJECT}.git
+			git -c core.sshCommand="ssh -i ${EDDIESIGNINGDIR}/aur.key" clone ssh://aur@aur.archlinux.org/eddie-${PROJECT}.git
 			cd eddie-${PROJECT}
 			cp ../PKGBUILD .
 			cp ../eddie-${PROJECT}.install .
@@ -121,7 +128,7 @@ function arch_env() {
 		git add eddie-${PROJECT}.install
 		git add PKGBUILD
 		git commit -m "${VERSION}"
-		git -c core.sshCommand="ssh -i ${SCRIPTDIR}/../signing/aur.key" push
+		git -c core.sshCommand="ssh -i ${EDDIESIGNINGDIR}/aur.key" push
 	fi   
 }
 
@@ -139,11 +146,11 @@ if [ "$MODE" == "local" ]; then
 	arch_env self "${REPODIR}" "${TARGETDIR}" "${SCRIPTDIR}"
 
 elif [ "$MODE" == "git" ]; then
-	if test -f "${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase"; then # Staff AirVPN
+	if test -f "${EDDIESIGNINGDIR}/eddie.gpg-signing.passphrase"; then # Staff AirVPN
 		arch_env git "${REPODIR}" "${TARGETDIR}" "${SCRIPTDIR}"
 	fi
 elif [ "$MODE" == "stable" ]; then
-	if test -f "${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase"; then # Staff AirVPN
+	if test -f "${EDDIESIGNINGDIR}/eddie.gpg-signing.passphrase"; then # Staff AirVPN
 		arch_env stable "${REPODIR}" "${TARGETDIR}" "${SCRIPTDIR}"
 	fi
 fi

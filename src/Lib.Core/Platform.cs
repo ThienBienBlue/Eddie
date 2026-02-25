@@ -570,7 +570,7 @@ namespace Eddie.Core
 			// See https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview?tabs=cli#api-incompatibility
 
 			// When run with VSCode, System.Environment.ProcessPath return dotnet executable
-			if (System.Diagnostics.Process.GetCurrentProcess().MainModule.ModuleName.ToLowerInvariant() == "dotnet")
+			if (System.Diagnostics.Process.GetCurrentProcess().MainModule.ModuleName.StartsWithInv("dotnet"))
 			{
 				return System.Reflection.Assembly.GetEntryAssembly().Location;
 			}
@@ -880,7 +880,7 @@ namespace Eddie.Core
 				 * Search WSANO_RECOVERY in session.cs for more notes.
 				 */
 				/*
-			   if( (e is System.Net.Sockets.SocketException) && ((e as System.Net.Sockets.SocketException).ErrorCode == 11003)) // WSANO_RECOVERY
+			   if ( (e is System.Net.Sockets.SocketException) && ((e as System.Net.Sockets.SocketException).ErrorCode == 11003)) // WSANO_RECOVERY
 			   {
 				   try
 				   {
@@ -975,6 +975,8 @@ namespace Eddie.Core
 
 						Json jInterface = new Json();
 						jInterface["id"].Value = id;
+						jInterface["name"].Value = adapter.Name;
+						jInterface["desc"].Value = adapter.Description;
 						//jInterface["ts"].Value = Utils.UnixTimeStamp();
 						jInterface["rcv"].Value = bytesRcv;
 						jInterface["snd"].Value = bytesSnd;

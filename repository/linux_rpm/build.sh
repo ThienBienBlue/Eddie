@@ -171,22 +171,28 @@ elif [ ${ARCH} = "x64" ]; then
     ARCHRPM="x86_64"
 fi
 
-# Signing
-if test -f "${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase"; then # Staff AirVPN
-    echo if requested, enter $(cat "${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase") as passphrase
-    echo -e "%_signature gpg\n%_gpg_name Eddie <maintainer@eddie.website>\n%__gpg /usr/bin/gpg\n" >~/.rpmmacros
-    export GPG_TTY=$(tty) # Fix for gpg: signing failed: Inappropriate ioctl for device
-    rpmsign --addsign eddie-${PROJECT}-${VERSION}-0.${ARCHRPM}.rpm
-fi
-
 # Final move
 mv eddie-${PROJECT}-${VERSION}-0.${ARCHRPM}.rpm ${FINALPATH}
 
-# Deploy to eddie.website
-${SCRIPTDIR}/../linux_common/deploy.sh ${FINALPATH}
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then
+    echo Step: Signing
+    echo if requested, enter $(cat "${EDDIESIGNINGDIR}/eddie.gpg-signing.passphrase") as passphrase
+    echo -e "%_signature gpg\n%_gpg_name Eddie <maintainer@eddie.website>\n%__gpg /usr/bin/gpg\n" >~/.rpmmacros
+    export GPG_TTY=$(tty) # Fix for gpg: signing failed: Inappropriate ioctl for device
+    rpmsign --addsign "${FINALPATH}"
+
+    echo Step: Deploy
+    ${SCRIPTDIR}/../linux_common/deploy.sh ${FINALPATH}
+
+    echo Step: PGP
+    "${SCRIPTDIR}/../linux_common/sign-openpgp.sh" "${FINALPATH}"
+    test -f "${FINALPATH}.asc" && ${SCRIPTDIR}/../linux_common/deploy.sh "${FINALPATH}.asc"
+fi
 
 # End
 mv ${FINALPATH} ${DEPLOYPATH}
+test -f "${FINALPATH}.asc" && mv "${FINALPATH}.asc" "${DEPLOYPATH}.asc"
 
 # Cleanup
 echo Step: Final cleanup

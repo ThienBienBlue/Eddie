@@ -127,8 +127,15 @@ tar cvfz "$DEPLOYPATH" ${FINALNAME}
 
 sudo chown $USER ${DEPLOYPATH}
 
-# Deploy to eddie.website
-${SCRIPTDIR}/../linux_common/deploy.sh ${DEPLOYPATH}
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then    
+    echo Step: Deploy
+    ${SCRIPTDIR}/../linux_common/deploy.sh ${DEPLOYPATH}
+
+    echo Step: PGP
+    "${SCRIPTDIR}/../linux_common/sign-openpgp.sh" "${DEPLOYPATH}"
+    test -f "${DEPLOYPATH}.asc" && ${SCRIPTDIR}/../linux_common/deploy.sh "${DEPLOYPATH}.asc"
+fi
 
 # Cleanup - with sudo because AppImage create files as root
 sudo rm -rf $TARGETDIR

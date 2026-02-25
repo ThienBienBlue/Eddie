@@ -517,7 +517,11 @@ int IPosix::ExecRaw(const std::string& path, const std::vector<std::string>& arg
 	{
 		logMessage += ", exit:" + std::to_string(exitCode);
 		if (StringTrim(stdOut) != "")
-			logMessage += ", out:'" + StringTrim(stdOut) + "'";
+		{
+			std::string stdOutLog = stdOut;
+			if ( (exitCode == 0) && (StringStartsWith(stdOut, "Routing tables")) ) stdOutLog = "<omissis>"; // Too much logs
+			logMessage += ", out:'" + StringTrim(stdOutLog) + "'";
+		}
 		if (StringTrim(stdErr) != "")
 			logMessage += ", err:'" + StringTrim(stdErr) + "'";
 		LogDebug(logMessage);
@@ -946,6 +950,32 @@ bool IPosix::CheckIfExecutableIsAllowed(const std::string& path, const bool& thr
 			if (st.st_uid != 0)
 			{
 				issues += "Not owned by root;";
+				/*
+				{
+					if(ignoreKnown) 
+						issues += "IK:Y;";
+					else
+						issues += "IK:N;";
+
+					if (FsFileGetDirectory(path) != FsFileGetDirectory(GetProcessPathCurrent()))
+						issues += "DP:Y;";
+					else
+					{
+						issues += "DP:N;";
+						std::string integrityKnown = IntegrityCheckRead(GetLaunchMode());
+						issues += "IK:" + integrityKnown + ";";
+
+						// Seem excessive to check/compute-sha all files every time, but read comment in IntegrityCheckBuild.
+						std::string integrityComputed = IntegrityCheckBuild();
+						issues += "IC:" + integrityComputed + ";";
+
+						if(integrityKnown != integrityKnown)
+							issues += "ID;Y";
+						else
+							issues += "ID:N";
+					}
+				}
+				*/
 			}
 			else if ((st.st_mode & S_ISUID) == 0)
 			{

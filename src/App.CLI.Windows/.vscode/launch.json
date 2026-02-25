@@ -6,11 +6,12 @@
             "type": "coreclr",
             "request": "launch",            
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/net7.0/win-x64/Eddie-CLI.dll",
+            "program": "${workspaceFolder}/bin/Debug/net8.0/win-x64/Eddie-CLI.dll",
             "args": [
                 "path.tools=${workspaceFolder}/../../deploy/windows_{@arch}",
                 "path.resources=${workspaceFolder}/../../resources",
-                "path=home"
+                "path=home",
+                "webui.enabled=true"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -19,7 +20,8 @@
         {
             "name": ".NET Core Attach",
             "type": "coreclr",
-            "request": "attach"
+            "request": "attach",
+            "processName": "Eddie-CLI.exe"
         }
     ]
 }

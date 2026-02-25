@@ -41,5 +41,17 @@ namespace Eddie.Core
 				return t;
 			}
 		}
+
+		/// <summary>Serialize to Json for API (stats.list) and WebUI. Contract: key, caption, icon, value, clickable.</summary>
+		public Json ToJson()
+		{
+			Json j = new Json();
+			j["key"].Value = Key ?? "";
+			j["caption"].Value = Caption ?? "";
+			j["icon"].Value = Icon ?? "";
+			j["value"].Value = Value ?? "";
+			j["clickable"].Value = Clickable ?? "";
+			return j;
+		}
 	}
 }

@@ -562,7 +562,7 @@ namespace Eddie.Core
 		}
 
 		public void SetConnected(bool connected)
-		{
+		{			
 			if (connected == m_connected)
 				return;
 

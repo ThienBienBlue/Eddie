@@ -4,10 +4,11 @@ set -euo pipefail
 
 # This exists because mixing already-builded net4.8 and net7 cause issues, so we launch this between switch.
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-SCRIPTDIR=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 echo Clean Start
 

@@ -106,6 +106,12 @@ namespace Eddie.Core
 				entry.Value = newValue;
 
 				Engine.Instance.OnStatsChange(entry);
+
+				Json j = new Json();
+				j["command"].Value = "ui.stats.change";
+				j["key"].Value = entry.Key ?? "";
+				j["value"].Value = entry.Value ?? "";
+				Engine.Instance.UiManager.Broadcast(j);
 			}
 		}
 

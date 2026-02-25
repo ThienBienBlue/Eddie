@@ -95,7 +95,7 @@ namespace Eddie.Core.Providers
 			long ts = User.GetAttributeInt64("ts", 0);
 
 			long tsMinReauth = Manifest.GetAttributeInt64("force_reauth_ts", 0);
-			if( (tsMinReauth>0) && (ts < tsMinReauth) )
+			if ( (tsMinReauth>0) && (ts < tsMinReauth) )
 			{
 				Engine.Instance.ReAuth();
 			}
@@ -870,7 +870,7 @@ namespace Eddie.Core.Providers
 					IpAddress ip = new IpAddress(sUrl);
 					if (ip.IsV4)
 						sUrl = "http://" + ip.ToString();
-					else if(ip.IsV6)
+					else if (ip.IsV6)
 						sUrl = "http://[" + ip.ToString() + "]";
 
 					if ((!sUrl.StartsWithInv("http://")) && (!sUrl.StartsWithInv("https://")))

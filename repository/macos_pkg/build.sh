@@ -2,10 +2,11 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-SCRIPTDIR=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Check args
 
@@ -36,7 +37,7 @@ FRAMEWORK=$4
 CONFIG=Release
 VERSION=$($SCRIPTDIR/../macos_common/get-version.sh)
 STAFF="no"
-if test -f "${SCRIPTDIR}/../signing/apple-dev-id.txt"; then # Staff AirVPN
+if test -f "${EDDIESIGNINGDIR}/apple-dev-id.txt"; then # Staff AirVPN
     STAFF="yes"
 fi
 
@@ -72,41 +73,40 @@ unzip "${DEPPACKAGEPATH}" -d "${TARGETDIR}/"
 
 if [ ${STAFF} = "yes" ]; then
     echo Step: Build with signature
-    APPLEID=$(cat ${SCRIPTDIR}/../signing/apple-dev-id.txt)
+    APPLEID=$(cat ${EDDIESIGNINGDIR}/apple-dev-id.txt)
     pkgbuild --component-plist ${SCRIPTDIR}/eddie-pkg.plist --identifier org.airvpn.eddie.${PROJECT} --version ${VERSION} --install-location /Applications --root "${TARGETDIR}" --sign "${APPLEID}" --timestamp "${FINALPATH}"
 else
     echo Step: Build
     pkgbuild --component-plist ${SCRIPTDIR}/eddie-pkg.plist --identifier org.airvpn.eddie.${PROJECT} --version ${VERSION} --install-location /Applications --root "${TARGETDIR}" "${FINALPATH}"
 fi
 
-# Hardening - See comment in macos_portable/build.sh
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then
+    # Hardening - See comment in macos_portable/build.sh
+    VARHARDENING="yes"
+    if [ ${VAROS} = "macos-10.9" ]; then
+        VARHARDENING="no"
+    fi
 
-VARHARDENING="yes"
-if [ ${VAROS} = "macos-10.9" ]; then
-    VARHARDENING="no"
-fi
-
-# Sign package
-
-if [ ${STAFF} = "yes" ]; then
+    # Signing
     "${SCRIPTDIR}/../macos_common/sign.sh" "${FINALPATH}" yes ${VARHARDENING}
-fi
 
-# Notarization
-
-if [ ${STAFF} = "yes" ]; then
+    # Notarization
     if [ ${VARHARDENING} = "yes" ]; then    
         "${SCRIPTDIR}/../macos_common/notarize.sh" "${FINALPATH}"
     fi
+
+    # Deploy
+    "${SCRIPTDIR}/../macos_common/deploy.sh" "${FINALPATH}" "internal"
+
+    # PGP
+    "${SCRIPTDIR}/../macos_common/sign-openpgp.sh" "${FINALPATH}"
+    test -f "${FINALPATH}.asc" && "${SCRIPTDIR}/../macos_common/deploy.sh" "${FINALPATH}.asc" "internal"
 fi
 
 # End
-
 mv ${FINALPATH} ${DEPLOYPATH}
-
-# Deploy to eddie.website
-
-"${SCRIPTDIR}/../macos_common/deploy.sh" "${DEPLOYPATH}" "internal"
+test -f "${FINALPATH}.asc" && mv "${FINALPATH}.asc" "${DEPLOYPATH}.asc"
 
 # Cleanup
 

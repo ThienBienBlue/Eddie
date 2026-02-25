@@ -47,7 +47,7 @@ namespace Eddie.Core
 
 		public void Start2(UiClient client)
 		{
-			Send(client, LanguageManager.GetText(LanguageItems.ReportStepCollectEnvironmentInfo), 0);
+			Send(client, LanguageManager.GetText(LanguageItems.ReportStepCollectEnvironmentInfo), 0);			
 
 			Environment();
 
@@ -83,6 +83,8 @@ namespace Eddie.Core
 				jReport["body"].Value = ToString();
 			jReport["perc"].Value = perc;
 			client.OnReceive(jReport);
+
+			System.Threading.Thread.Sleep(300); // Fake, for better UI feeling
 		}
 
 		public override string ToString()

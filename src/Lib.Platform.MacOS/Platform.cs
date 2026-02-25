@@ -74,7 +74,7 @@ namespace Eddie.Platform.MacOS
 #if !EDDIE_DOTNET
 		public override string GetOsArchitecture()
 		{
-			if(m_osArchitecture == "")
+			if (m_osArchitecture == "")
 			{
 				// Note: uname -m still return "x64" also in arm64,
 				// because net4 still run with Rosetta
@@ -94,7 +94,7 @@ namespace Eddie.Platform.MacOS
 
 #if !EDDIE_DOTNET
 			// Clean mono_crash files, otherwise Elevated can't run (fail codesign bundle verification)
-			if(true)
+			if (true)
 			{
 				string resPath = "../Resources";
 				resPath = FileGetAbsolutePath(resPath, GetApplicationPath());
@@ -210,12 +210,12 @@ namespace Eddie.Platform.MacOS
 			if (value)
 			{
 				RunElevated(new string[] { "service=install", "service_port=" + Engine.Instance.GetElevatedServicePort() }, true);
-				return (GetService() == true);
+				return GetService();
 			}
 			else
 			{
 				RunElevated(new string[] { "service=uninstall" }, true);
-				return (GetService() == false);
+				return !GetService();
 			}
 		}
 
@@ -237,7 +237,7 @@ namespace Eddie.Platform.MacOS
 
 		public override bool FileImmutableGet(string path)
 		{
-			if ((path == "") || (FileExists(path) == false))
+			if (string.IsNullOrEmpty(path) || !FileExists(path))
 				return false;
 
 			int result = NativeMethods.FileGetImmutable(path);
@@ -246,7 +246,7 @@ namespace Eddie.Platform.MacOS
 
 		public override void FileImmutableSet(string path, bool value)
 		{
-			if ((path == "") || (FileExists(path) == false))
+			if (string.IsNullOrEmpty(path) || !FileExists(path))
 				return;
 
 			if (FileImmutableGet(path) == value)
@@ -257,7 +257,7 @@ namespace Eddie.Platform.MacOS
 
 		public override bool FileEnsurePermission(string path, string mode)
 		{
-			if ((path == "") || (Platform.Instance.FileExists(path) == false))
+			if (string.IsNullOrEmpty(path) || !Platform.Instance.FileExists(path))
 				return false;
 
 			int result = NativeMethods.FileGetMode(path);
@@ -293,7 +293,7 @@ namespace Eddie.Platform.MacOS
 
 		public override bool FileEnsureExecutablePermission(string path)
 		{
-			if ((path == "") || (FileExists(path) == false))
+			if (string.IsNullOrEmpty(path) || !FileExists(path))
 				return false;
 
 			int result = NativeMethods.FileGetMode(path);
@@ -434,7 +434,7 @@ namespace Eddie.Platform.MacOS
 				exitCode = -1;
 			}
 					
-			if(false)
+			if (false)
 			{
 				// Used to compare output between base edition and NSPipe edition
 				string stdout2;
@@ -443,7 +443,7 @@ namespace Eddie.Platform.MacOS
 
 				base.ExecSyncCore(path, arguments, autoWriteStdin, out stdout2, out stderr2, out exitcode2);
 
-				if(stdout != stdout2)
+				if (stdout != stdout2)
 				{
 					Console.WriteLine("stdout diff");
 				}

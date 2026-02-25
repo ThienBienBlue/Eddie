@@ -287,6 +287,14 @@ namespace Eddie.Platform.Linux
 							rulesIPv6.AppendLine("-A INPUT -p ipv6-icmp -j ACCEPT");
 						}
 
+						if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp"))
+						{
+							rulesIPv6.AppendLine("-A INPUT -s fe80::/10 -p icmpv6 --icmpv6-type 134 -m hl --hl-eq 255 -j ACCEPT");
+							rulesIPv6.AppendLine("-A INPUT -s fe80::/10 -p icmpv6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT");
+							rulesIPv6.AppendLine("-A INPUT -s fe80::/10 -p icmpv6 --icmpv6-type 137 -m hl --hl-eq 255 -j ACCEPT");
+							rulesIPv6.AppendLine("-A INPUT -p icmpv6 --icmpv6-type 136 -m hl --hl-eq 255 -j ACCEPT");
+						}
+
 						// Allow established sessions to receive traffic
 						rulesIPv6.AppendLine("-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT");
 
@@ -342,6 +350,13 @@ namespace Eddie.Platform.Linux
 						if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ping"))
 						{
 							rulesIPv6.AppendLine("-A OUTPUT -p ipv6-icmp -j ACCEPT");
+						}
+
+						if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp"))
+						{
+							rulesIPv6.AppendLine("-A OUTPUT -d ff02::2 -p icmpv6 --icmpv6-type 133 -m hl --hl-eq 255 -j ACCEPT");
+							rulesIPv6.AppendLine("-A OUTPUT -d ff02::1:ff00:0/104 -p icmpv6 --icmpv6-type 135 -m hl --hl-eq 255 -j ACCEPT");
+							rulesIPv6.AppendLine("-A OUTPUT -d fe80::/10 -p icmpv6 --icmpv6-type 136 -m hl --hl-eq 255 -j ACCEPT");
 						}
 
 						// Allow TUN

@@ -489,6 +489,7 @@ namespace Eddie.Core
 			SetDefaultBool("netlock.allow_private", true, LanguageManager.GetText(LanguageItems.ManOptionNetLockAllowPrivate));
 			SetDefaultBool("netlock.allow_dhcp", true, LanguageManager.GetText(LanguageItems.ManOptionNetLockAllowDHCP)); // Win only
 			SetDefaultBool("netlock.allow_ping", true, LanguageManager.GetText(LanguageItems.ManOptionNetLockAllowPing));
+			SetDefaultBool("netlock.allow_ndp", true, LanguageManager.GetText(LanguageItems.ManOptionNetLockAllowNDP));
 			SetDefaultBool("netlock.allow_dns", false, LanguageManager.GetText(LanguageItems.ManOptionNetLockAllowDNS));
 			SetDefaultBool("netlock.allow_ipv4ipv6translation", true, NotInManYet);
 			SetDefaultChoice("netlock.incoming", "allow,block", "block", LanguageManager.GetText(LanguageItems.ManOptionNetLockIncoming));

@@ -1,5 +1,5 @@
 @echo off
-SETLOCAL
+SETLOCAL ENABLEDELAYEDEXPANSION
 
 if "%~1"=="" (
 	echo "Project missing"
@@ -60,19 +60,20 @@ rem NSIS
 echo "Shell NSIS"
 "c:\\Program Files (x86)\\NSIS\\makensis.exe" "%VARTARGETDIR%\Eddie.nsi" || goto :error
 
-rem Signing
-
-SET /p VARSIGNPASSWORD= < "%VARSCRIPTDIR%\..\signing\eddie.win-signing.pfx.pwd"
-IF exist %VARSCRIPTDIR%\..\signing\eddie.win-signing.pfx (
+rem Staff Deploy
+if defined EDDIESIGNINGDIR (
 	echo Step: Signing		
-	%VARSCRIPTDIR%\..\windows_common\signtool.exe sign /fd sha256 /p "%VARSIGNPASSWORD%" /f "%VARSCRIPTDIR%\..\signing\eddie.win-signing.pfx" /t http://timestamp.comodoca.com/authenticode /d "Eddie - VPN Tunnel" "%VARFINALPATH%" || goto :error
-)
+	SET /p VARSIGNPASSWORD= < "%EDDIESIGNINGDIR%\eddie.win-signing.pfx.pwd"
+	%VARSCRIPTDIR%\..\windows_common\signtool.exe sign /fd sha256 /p "!VARSIGNPASSWORD!" /f "%EDDIESIGNINGDIR%\eddie.win-signing.pfx" /t http://timestamp.comodoca.com/authenticode /d "Eddie - VPN Tunnel" "%VARFINALPATH%" || goto :error
 
-rem Deploy
-CALL %VARSCRIPTDIR%\..\windows_common\deploy.bat "%VARFINALPATH%" || goto :error
+	CALL %VARSCRIPTDIR%\..\windows_common\deploy.bat "%VARFINALPATH%" || goto :error
+	call %VARSCRIPTDIR%\..\windows_common\sign-openpgp.bat "%VARFINALPATH%" || goto :error
+	if exist "%VARFINALPATH%.asc" call %VARSCRIPTDIR%\..\windows_common\deploy.bat "%VARFINALPATH%.asc" || goto :error
+)
 
 rem End
 move "%VARFINALPATH%" "%VARDEPLOYPATH%"
+if exist "%VARFINALPATH%.asc" move "%VARFINALPATH%.asc" "%VARDEPLOYPATH%.asc"
 
 rem Cleanup
 echo Step: Final cleanup

@@ -11,18 +11,15 @@ IF "%~2"=="" (
 	GOTO error
 )
 
-rem set VARMSBUILD="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
-set VARMSBUILD="C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe"
-
 set VARSCRIPTDIR=%~dp0
-
+call "%VARSCRIPTDIR%\..\..\repository\windows_common\locate_msbuild.bat" || exit /b 1
 set VARCONFIG=%~1
 set VARARCH=%~2
 set VARARCHCOMPILE=%VARARCH%
 
 set VARSOLUTIONPATH="%VARSCRIPTDIR%\App.CLI.Windows.Elevated.Service.sln"
 
-%VARMSBUILD% /verbosity:minimal /property:CodeAnalysisRuleSet=%VARRULESETPATH% /p:Configuration=%VARCONFIG% /p:Platform=%VARARCHCOMPILE% /t:Rebuild %VARSOLUTIONPATH% || GOTO error
+"%VARMSBUILD%" /verbosity:minimal /property:CodeAnalysisRuleSet=%VARRULESETPATH% /p:Configuration=%VARCONFIG% /p:Platform=%VARARCHCOMPILE% /t:Rebuild %VARSOLUTIONPATH% || GOTO error
 
 GOTO done
 

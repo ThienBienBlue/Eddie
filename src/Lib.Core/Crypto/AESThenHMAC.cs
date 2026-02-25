@@ -310,7 +310,10 @@ namespace Eddie.Core.Crypto
 		/// <remarks>
 		/// Significantly less secure than using random binary keys.
 		/// Adds additional non secret payload for key generation parameters.
+		/// New format uses PBKDF2-SHA256 and a version byte; legacy decrypt still supports SHA-1.
 		/// </remarks>
+		const byte PayloadVersionSha256 = 0x01;
+
 		public static byte[] SimpleEncryptWithPassword(byte[] secretMessage, string password, byte[] nonSecretPayload = null)
 		{
 			nonSecretPayload = nonSecretPayload ?? new byte[] { };
@@ -318,50 +321,21 @@ namespace Eddie.Core.Crypto
 			if (secretMessage == null || secretMessage.Length == 0)
 				throw new ArgumentException("Secret Message Required!", "secretMessage");
 
-			byte[] payload = new byte[((SaltBitSize / 8) * 2) + nonSecretPayload.Length];
+			int saltBytes = SaltBitSize / 8;
+			int keyBytes = KeyBitSize / 8;
+			byte[] cryptSalt = new byte[saltBytes];
+			byte[] authSalt = new byte[saltBytes];
+			Random.GetBytes(cryptSalt);
+			Random.GetBytes(authSalt);
 
+			byte[] cryptKey = Pbkdf2Compat.DeriveKeySha256(password, cryptSalt, Iterations, keyBytes);
+			byte[] authKey = Pbkdf2Compat.DeriveKeySha256(password, authSalt, Iterations, keyBytes);
+
+			byte[] payload = new byte[nonSecretPayload.Length + 1 + saltBytes * 2];
 			Array.Copy(nonSecretPayload, payload, nonSecretPayload.Length);
-			int payloadIndex = nonSecretPayload.Length;
-
-			byte[] cryptKey;
-			byte[] authKey;
-
-#pragma warning disable CA5379 // SHA1 is weak, TOFIX
-			// Use Random Salt to prevent pre-generated weak password attacks.
-#if EDDIEMONO4LINUX // Mono under Linux don't have 4 params constructor
-			using (Rfc2898DeriveBytes generator = new Rfc2898DeriveBytes(password, SaltBitSize / 8, Iterations))
-#else
-			// If you debug with old MonoDevelop, decomment the first line in this .cs file.
-			using (Rfc2898DeriveBytes generator = new Rfc2898DeriveBytes(password, SaltBitSize / 8, Iterations, HashAlgorithmName.SHA1))
-#endif
-			{
-				byte[] salt = generator.Salt;
-
-				// Generate Keys
-				cryptKey = generator.GetBytes(KeyBitSize / 8);
-
-				// Create Non Secret Payload
-				Array.Copy(salt, 0, payload, payloadIndex, salt.Length);
-				payloadIndex += salt.Length;
-			}
-
-			// Deriving separate key, might be less efficient than using HKDF, 
-			// but now compatible with RNEncryptor which had a very similar wireformat and requires less code than HKDF.
-#if EDDIEMONO4LINUX // Mono under Linux don't have 4 params constructor
-			using (Rfc2898DeriveBytes generator = new Rfc2898DeriveBytes(password, SaltBitSize / 8, Iterations))
-#else
-			using (Rfc2898DeriveBytes generator = new Rfc2898DeriveBytes(password, SaltBitSize / 8, Iterations, HashAlgorithmName.SHA1))
-#endif
-			{
-				var salt = generator.Salt;
-
-				// Generate Keys
-				authKey = generator.GetBytes(KeyBitSize / 8);
-
-				// Create Rest of Non Secret Payload
-				Array.Copy(salt, 0, payload, payloadIndex, salt.Length);
-			}
-#pragma warning restore CA5379
+			payload[nonSecretPayload.Length] = PayloadVersionSha256;
+			Array.Copy(cryptSalt, 0, payload, nonSecretPayload.Length + 1, saltBytes);
+			Array.Copy(authSalt, 0, payload, nonSecretPayload.Length + 1 + saltBytes, saltBytes);
 
 			return SimpleEncrypt(secretMessage, cryptKey, authKey, payload);
 		}
@@ -385,38 +359,40 @@ namespace Eddie.Core.Crypto
 			if (encryptedMessage == null || encryptedMessage.Length == 0)
 				throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
 
-			var cryptSalt = new byte[SaltBitSize / 8];
-			var authSalt = new byte[SaltBitSize / 8];
+			int saltBytes = SaltBitSize / 8;
+			int keyBytes = KeyBitSize / 8;
+			int saltPairLength = saltBytes * 2;
 
-			// Grab Salt from Non-Secret Payload
-			Array.Copy(encryptedMessage, nonSecretPayloadLength, cryptSalt, 0, cryptSalt.Length);
-			Array.Copy(encryptedMessage, nonSecretPayloadLength + cryptSalt.Length, authSalt, 0, authSalt.Length);
+			if (encryptedMessage.Length < nonSecretPayloadLength + saltPairLength)
+				return null;
 
 			byte[] cryptKey;
 			byte[] authKey;
+			int payloadLength;
 
-#pragma warning disable CA5379 // SHA1 is weak, TOFIX
-			// Generate crypt key
-#if EDDIEMONO4LINUX // Mono under Linux don't have 4 params constructor
-			using (var generator = new Rfc2898DeriveBytes(password, cryptSalt, Iterations))
-#else
-			using (var generator = new Rfc2898DeriveBytes(password, cryptSalt, Iterations, HashAlgorithmName.SHA1))
-#endif
-			{
-				cryptKey = generator.GetBytes(KeyBitSize / 8);
+			if (encryptedMessage[nonSecretPayloadLength] == PayloadVersionSha256)
+			{				
+				if (encryptedMessage.Length < nonSecretPayloadLength + 1 + saltPairLength)
+					return null;
+				var cryptSalt = new byte[saltBytes];
+				var authSalt = new byte[saltBytes];
+				Array.Copy(encryptedMessage, nonSecretPayloadLength + 1, cryptSalt, 0, saltBytes);
+				Array.Copy(encryptedMessage, nonSecretPayloadLength + 1 + saltBytes, authSalt, 0, saltBytes);
+				cryptKey = Pbkdf2Compat.DeriveKeySha256(password, cryptSalt, Iterations, keyBytes);
+				authKey = Pbkdf2Compat.DeriveKeySha256(password, authSalt, Iterations, keyBytes);
+				payloadLength = nonSecretPayloadLength + 1 + saltPairLength;
 			}
-			// Generate auth key
-#if EDDIEMONO4LINUX // Mono under Linux don't have 4 params constructor
-			using (var generator = new Rfc2898DeriveBytes(password, authSalt, Iterations))
-#else
-			using (var generator = new Rfc2898DeriveBytes(password, authSalt, Iterations, HashAlgorithmName.SHA1))
-#endif
-			{
-				authKey = generator.GetBytes(KeyBitSize / 8);
+			else
+			{				
+				var cryptSalt = new byte[saltBytes];
+				var authSalt = new byte[saltBytes];
+				Array.Copy(encryptedMessage, nonSecretPayloadLength, cryptSalt, 0, saltBytes);
+				Array.Copy(encryptedMessage, nonSecretPayloadLength + saltBytes, authSalt, 0, saltBytes);
+				Pbkdf2Compat.DeriveKeysLegacy(password, cryptSalt, authSalt, Iterations, keyBytes, out cryptKey, out authKey);
+				payloadLength = nonSecretPayloadLength + saltPairLength;
 			}
-#pragma warning restore CA5379
 
-			return SimpleDecrypt(encryptedMessage, cryptKey, authKey, cryptSalt.Length + authSalt.Length + nonSecretPayloadLength);
+			return SimpleDecrypt(encryptedMessage, cryptKey, authKey, payloadLength);
 		}
 	}
 }

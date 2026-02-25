@@ -144,6 +144,19 @@ namespace Eddie.Platform.Windows
 					}
 				}
 
+				if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp") == true)
+				{
+					// Allow NDP IPv4
+					{
+						// WIP
+					}
+
+					// Allow NDP IPv6
+					{
+						// WIP
+					}
+				}
+
 				if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ipv4ipv6translation") == true)
 				{
 					AddRule("netlock_allow_ipv4ipv6translation1", Wfp.CreateItemAllowAddress("NetLock - IPv4-IPv6 Translation - Allow Subnet 1 - IPv6", new IpAddress("64:ff9b::/96"))); // RFC 6052 // 2.24.3

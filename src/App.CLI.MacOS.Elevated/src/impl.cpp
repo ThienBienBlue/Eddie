@@ -79,13 +79,15 @@ void Impl::Do(const std::string& commandId, const std::string& command, std::map
 			}
 		}
 	}
+	// Removed, related to CVE-2025-14979
+	/*
 	else if (command == "shortcut-cli")
 	{
 		std::string action = params["action"];
 		std::string pathExecutable = params["path"];
 		std::string pathShortcut = "/usr/local/bin/eddie-cli";
 		if (action == "set")
-		{
+		{			
 			FsDirectoryCreate("/usr/local/bin");
 			FsFileWriteText(pathShortcut, "#! /bin/bash\n\"" + pathExecutable + "\" $@");
 			chmod(pathShortcut.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
@@ -96,6 +98,7 @@ void Impl::Do(const std::string& commandId, const std::string& command, std::map
 				FsFileDelete(pathShortcut);
 		}
 	}
+	*/
 	else if (command == "file-immutable-set")
 	{
 		std::string path = params["path"];

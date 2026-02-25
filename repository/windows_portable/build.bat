@@ -82,12 +82,11 @@ IF "!VARPROJECT!"=="ui" (
 		copy "%VARSCRIPTDIR%\..\..\src\App.UI.Windows\bin\*" "%VARTARGETDIR%\" /Y /V || GOTO error	
 	) ELSE IF "!VARFRAMEWORK!"=="net4" (		
 		call "!VARSCRIPTDIR!\..\..\src\win_clean.bat"		
-		set VARMSBUILD="C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe"
+		call "!VARSCRIPTDIR!\..\windows_common\locate_msbuild.bat" || exit /b 1
 		set VARTARGETFRAMEWORK="v4.8"	
 		set VARRULESETPATH="!VARSCRIPTDIR!\..\..\src\ruleset\norules.ruleset"
 		set VARSOLUTIONPATH="!VARSCRIPTDIR!\..\..\src\App.Forms.Windows\App.Forms.Windows.sln"
-		echo !VARMSBUILD! /verbosity:minimal /property:CodeAnalysisRuleSet=!VARRULESETPATH! /p:Configuration=!VARCONFIG! /p:Platform=!VARARCH! /p:TargetFrameworkVersion=!VARTARGETFRAMEWORK! /t:Rebuild !VARSOLUTIONPATH! /p:DefineConstants="EDDIENET4" || goto :error	
-		!VARMSBUILD! /verbosity:minimal /property:CodeAnalysisRuleSet=!VARRULESETPATH! /p:Configuration=!VARCONFIG! /p:Platform=!VARARCH! /p:TargetFrameworkVersion=!VARTARGETFRAMEWORK! /t:Rebuild !VARSOLUTIONPATH! /p:DefineConstants="EDDIENET4" || goto :error	
+		"!VARMSBUILD!" /verbosity:minimal /property:CodeAnalysisRuleSet=!VARRULESETPATH! /p:Configuration=!VARCONFIG! /p:Platform=!VARARCH! /p:TargetFrameworkVersion=!VARTARGETFRAMEWORK! /t:Rebuild !VARSOLUTIONPATH! /p:DefineConstants="EDDIENET4" || goto :error	
 		copy !VARSCRIPTDIR!\..\..\src\App.Forms.Windows\bin\!VARARCH!\!VARCONFIG!\* !VARTARGETDIR! || goto :error
 		move !VARTARGETDIR!\App.Forms.Windows.exe !VARTARGETDIR!\Eddie-UI.exe || goto :error
 	)
@@ -105,16 +104,17 @@ del !VARTARGETDIR!\*.xml 2>nul
 
 rem Signing
 
-SET /p VARSIGNPASSWORD= < "!VARSCRIPTDIR!\..\signing\eddie.win-signing.pfx.pwd"
-IF exist !VARSCRIPTDIR!\..\signing\eddie.win-signing.pfx (
-	echo Step: Signing
+IF exist "%EDDIESIGNINGDIR%\eddie.win-signing.pfx" (
+	echo Step: Signing		
+	
+	SET /p VARSIGNPASSWORD= < "%EDDIESIGNINGDIR%\eddie.win-signing.pfx.pwd"
 
 	for %%f in (!VARTARGETDIR!\*.*) do (
 		IF NOT "%%~nxf"=="portable.txt" (
 			echo Check signature %%~ff 
 			!VARSCRIPTDIR!\..\windows_common\signtool.exe verify /pa "%%~ff"
 			if ERRORLEVEL 1 (
-				!VARSCRIPTDIR!\..\windows_common\signtool.exe sign /fd sha256 /p "!VARSIGNPASSWORD!" /f "!VARSCRIPTDIR!\..\signing\eddie.win-signing.pfx" /t http://timestamp.comodoca.com/authenticode /d "Eddie - VPN Tunnel" "%%~ff" || goto :error
+				!VARSCRIPTDIR!\..\windows_common\signtool.exe sign /fd sha256 /p "!VARSIGNPASSWORD!" /f "%EDDIESIGNINGDIR%\eddie.win-signing.pfx" /t http://timestamp.comodoca.com/authenticode /d "Eddie - VPN Tunnel" "%%~ff" || goto :error
 			) ELSE (
 				rem Already signed
 			)
@@ -127,11 +127,16 @@ echo Step: Build archive
 
 !VARSCRIPTDIR!\..\windows_common\7za.exe a -mx9 -tzip "!VARFINALPATH!" "!VARTARGETDIR!" || goto :error
 
-rem Deploy
-call !VARSCRIPTDIR!\..\windows_common\deploy.bat "!VARFINALPATH!" || goto :error
+rem Staff Deploy
+if defined EDDIESIGNINGDIR (
+	call !VARSCRIPTDIR!\..\windows_common\deploy.bat "!VARFINALPATH!" || goto :error
+	call !VARSCRIPTDIR!\..\windows_common\sign-openpgp.bat "!VARFINALPATH!" || goto :error
+	if exist "!VARFINALPATH!.asc" call !VARSCRIPTDIR!\..\windows_common\deploy.bat "!VARFINALPATH!.asc" || goto :error
+)
 
 rem End
 move "!VARFINALPATH!" "!VARDEPLOYPATH!"
+if exist "!VARFINALPATH!.asc" move "!VARFINALPATH!.asc" "!VARDEPLOYPATH!.asc"
 
 rem Cleanup
 echo Step: Final cleanup

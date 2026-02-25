@@ -101,7 +101,7 @@ namespace Eddie.Core
 
 		public static string GetCodeFromCulture(CultureInfo culture)
 		{
-			if (culture.Name == "")
+			if (string.IsNullOrEmpty(culture.Name))
 				return "inv";
 			else
 				return culture.Name;
@@ -252,7 +252,7 @@ namespace Eddie.Core
 		{
 			Int64 v = bytes;
 
-			if (userUnit == "")
+			if (string.IsNullOrEmpty(userUnit))
 			{
 				if (speedSec)
 					userUnit = "bits";
@@ -267,14 +267,14 @@ namespace Eddie.Core
 			string unit = "";
 			if (userUnit == "bits")
 			{
-				if (iec == false)
+				if (!iec)
 					FormatBytesEx(v, new string[] { "bit", "kbit", "Mbit", "Gbit", "Tbit", "Pbit" }, 1000, ref number, ref unit);
 				else
 					FormatBytesEx(v, new string[] { "bit", "kibit", "Mibit", "Gibit", "Tibit", "Pibit" }, 1024, ref number, ref unit);
 			}
 			else
 			{
-				if (iec == false)
+				if (!iec)
 					FormatBytesEx(v, new string[] { "B", "kB", "MB", "GB", "TB", "PB" }, 1000, ref number, ref unit);
 				else
 					FormatBytesEx(v, new string[] { "B", "KiB", "MiB", "GiB", "TiB", "PiB" }, 1024, ref number, ref unit);

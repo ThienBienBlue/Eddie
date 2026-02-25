@@ -2,16 +2,18 @@
 
 set -e
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#BASEPATH=$(dirname $(realpath "$0"))
+BASEPATH="$(cd "$(dirname "$0")" && pwd -P)"
 
 if [ "$1" == "" ]; then
     echo First arg must be Config, 'Debug' or 'Release'
     exit 1
 fi
 
-BASEPATH=$(dirname $(realpath "$0"))
+
 
 FILES=""
 FLAGS=""

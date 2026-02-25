@@ -154,20 +154,25 @@ dpkg -b ${TARGETDIR} ${FINALPATH}
 echo Step: Lintian
 lintian "${FINALPATH}"
 
-# Sign
-if test -f "${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase"; then # Staff AirVPN
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then    
     echo Step: Signing
-    PASSPHRASE=$(cat ${SCRIPTDIR}/../signing/eddie.gpg-signing.passphrase)
+    PASSPHRASE=$(cat ${EDDIESIGNINGDIR}/eddie.gpg-signing.passphrase)
     export GPG_TTY=$(tty) # Fix for gpg: signing failed: Inappropriate ioctl for device
-    dpkg-sig -m "maintainer@eddie.website" -g "--no-tty --passphrase ${PASSPHRASE}" --sign builder ${FINALPATH}
+    dpkg-sig -m "maintainer@eddie.website" -g "--batch --yes --pinentry-mode loopback --passphrase ${PASSPHRASE}" --sign builder ${FINALPATH}
     dpkg-sig --verify ${FINALPATH}
-fi
 
-# Deploy to eddie.website
-${SCRIPTDIR}/../linux_common/deploy.sh ${FINALPATH}
+    echo Step: Deploy
+    ${SCRIPTDIR}/../linux_common/deploy.sh ${FINALPATH}
+
+    echo Step: PGP
+    "${SCRIPTDIR}/../linux_common/sign-openpgp.sh" "${FINALPATH}"
+    test -f "${FINALPATH}.asc" && ${SCRIPTDIR}/../linux_common/deploy.sh "${FINALPATH}.asc"
+fi
 
 # End
 mv ${FINALPATH} ${DEPLOYPATH}
+test -f "${FINALPATH}.asc" && mv "${FINALPATH}.asc" "${DEPLOYPATH}.asc"
 
 # Cleanup
 echo Step: Final cleanup

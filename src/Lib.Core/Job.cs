@@ -40,6 +40,9 @@ namespace Eddie.Core
 		{
 			return false;
 		}
+		public virtual void OnInit()
+		{
+		}
 
 		public virtual void OnRun()
 		{

@@ -61,7 +61,7 @@ int Impl::Main()
 
 	prctl(PR_SET_PDEATHSIG, SIGHUP); // Any child process will be killed if this process died, Linux specific
 
-	m_hasSystemdResolved = (ExecEx3("systemctl", "is-active", "--quiet", "systemd-resolved").exit == 0);
+	m_hasSystemdResolved = ( (ExecEx3("systemctl", "is-active", "--quiet", "systemd-resolved").exit == 0) && (FsFileExists(systemdPath)) );
 
 	return IPosix::Main();
 }
@@ -1566,7 +1566,7 @@ bool Impl::IsServiceInstalled()
 
 bool Impl::ServiceInstall()
 {
-	if (FsFileExists(systemdPath))
+	if (m_hasSystemdResolved)
 	{
 		if (FsFileExists(systemdUnitPath)) // Remove if exists
 		{

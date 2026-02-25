@@ -2,10 +2,11 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-SCRIPTDIR=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 if [ "$1" == "" ]; then
 	echo First arg must be Path: yes,no
@@ -29,7 +30,7 @@ VARHARDENING=$3
 #VARFORCE="yes"
 #VARHARDENING="no"
 
-if test -f "${SCRIPTDIR}/../signing/apple-dev-id.txt"; then # Staff AirVPN
+if test -f "${EDDIESIGNINGDIR}/apple-dev-id.txt"; then # Staff AirVPN
     echo Signing, checking: ${VARPATH}    
     DOSIGN=${VARFORCE}
 
@@ -57,7 +58,7 @@ if test -f "${SCRIPTDIR}/../signing/apple-dev-id.txt"; then # Staff AirVPN
         export   CFLAGS="-mmacosx-version-min=10.9"   
         export CXXFLAGS="-mmacosx-version-min=10.9"
 
-        APPLEID=$(cat ${SCRIPTDIR}/../signing/apple-dev-id.txt)
+        APPLEID=$(cat ${EDDIESIGNINGDIR}/apple-dev-id.txt)
 
         # See comment in macos_portable/build.sh
 

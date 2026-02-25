@@ -580,6 +580,7 @@ namespace Eddie.Platform.Windows
 
 		public override bool FileEnsureCurrentUserOnly(string path)
 		{
+			/* <2.25.0
 			// Remove Inheritance
 			SystemExec.Exec1(Platform.Instance.LocateExecutable("icacls.exe"), "\"" + SystemExec.EscapePath(path).EscapeQuote() + "\" /c /t /inheritance:d");
 
@@ -591,6 +592,29 @@ namespace Eddie.Platform.Windows
 
 			// Remove other groups
 			SystemExec.Exec1(Platform.Instance.LocateExecutable("icacls.exe"), "\"" + SystemExec.EscapePath(path).EscapeQuote() + "\" /c /t /remove Administrator \"BUILTIN\\Administrators\" \"NT AUTHORITY\\Authenticated Users\" \"BUILTIN\\Users\" BUILTIN Everyone System Users");
+			*/
+
+			string exe = Platform.Instance.LocateExecutable("icacls.exe");
+			string p = SystemExec.EscapePath(path).EscapeQuote();
+			string qpath = $"\"{p}\"";
+
+			// Best-effort: reset ACL completely, then re-apply minimal secure ACL.
+			// Key points:
+			// - /reset wipes all explicit ACEs (including orphaned UNKNOWN SIDs)
+			// - /inheritance:r disables inheritance AND removes inherited ACEs
+			// - /grant:r replaces (not adds) the DACL with only the specified entries
+			// - add SYSTEM + Administrators to avoid edge cases (services, elevated contexts)
+			SystemExec.Exec1(exe, $"{qpath} /c /t /reset");
+			SystemExec.Exec1(exe, $"{qpath} /c /t /inheritance:r");
+
+			// Use the actual current identity (domain\user or machine\user), not just Environment.UserName
+			string me = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+
+			// Replace ACL with minimal set
+			SystemExec.Exec1(exe, $"{qpath} /c /t /grant:r \"{SystemExec.EscapeInsideQuote(me)}\":F \"SYSTEM\":F \"BUILTIN\\Administrators\":F");
+
+			// Set owner explicitly to current identity (some setups care)
+			SystemExec.Exec1(exe, $"{qpath} /c /t /setowner \"{SystemExec.EscapeInsideQuote(me)}\"");
 
 			return true;
 		}
@@ -1107,7 +1131,7 @@ namespace Eddie.Platform.Windows
 					{
 						// IPv4
 						IpAddresses dnsIPv4 = new IpAddresses(jNetworkInterface["dns4"].Value as string);
-						if (dnsIPv4.OnlyIPv4.Equals(dns.OnlyIPv4) == false)
+						if (!dnsIPv4.OnlyIPv4.Equals(dns.OnlyIPv4))
 						{
 							NetworkManagerDnsEntry entry = new NetworkManagerDnsEntry();
 							entry.Guid = interfaceId;
@@ -1132,7 +1156,7 @@ namespace Eddie.Platform.Windows
 						}
 
 						IpAddresses dnsIPv6 = new IpAddresses(jNetworkInterface["dns6"].Value as string);
-						if (dnsIPv6.OnlyIPv6.Equals(dns.OnlyIPv6) == false)
+						if (!dnsIPv6.OnlyIPv6.Equals(dns.OnlyIPv6))
 						{
 							NetworkManagerDnsEntry entry = new NetworkManagerDnsEntry();
 							entry.Guid = interfaceId;

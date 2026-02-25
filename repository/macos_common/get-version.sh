@@ -2,13 +2,13 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#CURRENTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
-CURRENTDIR=$(dirname $(realpath "$0"))
-
-cat ${CURRENTDIR}/../../src/Lib.Core/Constants.cs | grep "VersionDesc = \"" | awk -F"\"" '{print $2}'
+cat ${SCRIPTDIR}/../../src/Lib.Core/Constants.cs | grep "VersionDesc = \"" | awk -F"\"" '{print $2}'
 
 exit 0
 

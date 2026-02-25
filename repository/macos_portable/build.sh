@@ -2,10 +2,11 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-SCRIPTDIR=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Check args
 
@@ -219,19 +220,27 @@ echo Step: Build archive
 cd "${TARGETDIR}/" 
 zip -r "${FINALPATH}" ${TARGETMAINDIR}
 
-# Sign archive
-"${SCRIPTDIR}/../macos_common/sign.sh" "${FINALPATH}" yes $VARHARDENING
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then
+    # Signing
+    "${SCRIPTDIR}/../macos_common/sign.sh" "${FINALPATH}" yes $VARHARDENING
 
-# Notarization
-if [ ${VARHARDENING} = "yes" ]; then    
-    "${SCRIPTDIR}/../macos_common/notarize.sh" "${FINALPATH}"
+    # Notarization
+    if [ ${VARHARDENING} = "yes" ]; then    
+        "${SCRIPTDIR}/../macos_common/notarize.sh" "${FINALPATH}"
+    fi
+
+    # Deploy
+    "${SCRIPTDIR}/../macos_common/deploy.sh" "${FINALPATH}" "internal"
+
+    # PGP
+    "${SCRIPTDIR}/../macos_common/sign-openpgp.sh" "${FINALPATH}"
+    test -f "${FINALPATH}.asc" && "${SCRIPTDIR}/../macos_common/deploy.sh" "${FINALPATH}.asc" "internal"
 fi
-
-# Deploy to eddie.website
-"${SCRIPTDIR}/../macos_common/deploy.sh" "${FINALPATH}" "internal"
 
 # End
 mv ${FINALPATH} ${DEPLOYPATH}
+test -f "${FINALPATH}.asc" && mv "${FINALPATH}.asc" "${DEPLOYPATH}.asc"
 
 # Cleanup
 

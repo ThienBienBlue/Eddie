@@ -200,8 +200,15 @@ echo Step: Build archive
 cd "$TARGETDIR/"
 tar cvfz "$DEPLOYPATH" "eddie-${PROJECT}"
 
-# Deploy to eddie.website
-"${SCRIPTDIR}/../linux_common/deploy.sh" "${DEPLOYPATH}"
+# Staff Deploy
+if test -n "${EDDIESIGNINGDIR:-}"; then    
+    echo Step: Deploy
+    "${SCRIPTDIR}/../linux_common/deploy.sh" "${DEPLOYPATH}"
+
+    echo Step: PGP
+    "${SCRIPTDIR}/../linux_common/sign-openpgp.sh" "${DEPLOYPATH}"
+    test -f "${DEPLOYPATH}.asc" && "${SCRIPTDIR}/../linux_common/deploy.sh" "${DEPLOYPATH}.asc"
+fi
 
 # Cleanup
 echo Step: Final cleanup

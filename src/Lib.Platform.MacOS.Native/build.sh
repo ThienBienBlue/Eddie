@@ -2,11 +2,11 @@
 
 set -e
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
-
-BASEPATH=$(dirname $(realpath "$0"))
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#BASEPATH=$(dirname $(realpath "$0"))
+BASEPATH="$(cd "$(dirname "$0")" && pwd -P)"
 mkdir -p "$BASEPATH/bin"
 
 # Don't force any architecture (-arch), it's called by "VS for Mac" and must follow the same arch of parent. So will be x86_64 with net4, native with net7.

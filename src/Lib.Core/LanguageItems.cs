@@ -332,6 +332,7 @@ namespace Eddie.Core
 		ManOptionNetLockAllowlistIncomingIps,
 		ManOptionNetLockAllowlistOutgoingIps,
 		ManOptionNetLockAllowPing,
+		ManOptionNetLockAllowNDP,
 		ManOptionNetLockAllowPrivate,
 		ManOptionNetLockConnection,
 		ManOptionNetLockIncoming,

@@ -309,6 +309,7 @@
     "ManOptionNetLockAllowlistIncomingIps": "List (comma-separated) of incoming IP or range allowed in Network Lock mode.",
     "ManOptionNetLockAllowlistOutgoingIps": "List (comma-separated) of outgoing IP or range allowed in Network Lock mode.",
     "ManOptionNetLockAllowPing": "Allow ping (ICMP) in Network Lock mode.",
+    "ManOptionNetLockAllowNDP": "Allow NDP in Network Lock mode.",
     "ManOptionNetLockAllowPrivate": "Allow private network in Network Lock mode.",
     "ManOptionNetLockConnection": "If Network Lock must be active during session",
     "ManOptionNetLockIncoming": "How netlock deals with incoming connections: [i]allow[\/i] or [i]block[\/i]",

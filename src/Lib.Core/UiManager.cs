@@ -89,6 +89,10 @@ namespace Eddie.Core
 
 		public Json ProcessCommand(Json data, UiClient sender)
 		{
+			Json apiResult = ApiManager.Process(data, sender);
+			if (apiResult != null)
+				return apiResult;
+
 			string cmd = data["command"].Value as string;
 
 			if (cmd == "exit")

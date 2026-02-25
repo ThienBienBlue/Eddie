@@ -142,5 +142,4 @@ tests/**/bin/**/*.xml
 bin
 obj
 repository/files/*
-repository/signing/*
 

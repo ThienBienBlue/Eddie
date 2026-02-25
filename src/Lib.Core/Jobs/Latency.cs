@@ -25,6 +25,13 @@ namespace Eddie.Core.Jobs
 {
 	public class Latency : Eddie.Core.Job
 	{
+		private volatile bool m_needBroadcast;
+
+		public int Invalid = 0;
+		public long OlderCheckDate = 0;
+		public long LatestCheckDate = 0;
+		public bool Valid = false;
+
 		public override ThreadPriority GetPriority()
 		{
 			return ThreadPriority.Normal;
@@ -105,7 +112,70 @@ namespace Eddie.Core.Jobs
 					m_timeEvery = 100;
 				else
 					m_timeEvery = 1000;
+
+				if (m_needBroadcast)
+				{
+					m_needBroadcast = false;
+					BroadcastStatus();
+				}
 			}
+		}
+
+		public void BroadcastStatus()
+		{
+			Json j = ToJson();
+			j["command"].Value = "ui.pinger.status";
+			Engine.Instance.UiManager.Broadcast(j);
+		}
+
+		public Json ToJson()
+		{
+			UpdateStats();
+			Json j = new Json();
+			j["invalid"].Value = Invalid;
+			j["olderCheckDate"].Value = OlderCheckDate;
+			j["latestCheckDate"].Value = LatestCheckDate;
+			j["valid"].Value = Valid;
+			return j;
+		}
+
+		public string GetStatsString()
+		{
+			UpdateStats();
+			if (Engine.Instance.IsConnected())
+				return LanguageManager.GetText(LanguageItems.PingerStatsPending, LanguageManager.FormatTime(LatestCheckDate));
+			return LanguageManager.GetText(LanguageItems.PingerStatsNormal, Invalid.ToString(), LanguageManager.FormatTime(OlderCheckDate), LanguageManager.FormatTime(LatestCheckDate));
+		}
+
+		private void UpdateStats()
+		{
+			Invalid = 0;
+			OlderCheckDate = 0;
+			LatestCheckDate = 0;
+			Int64 timeNow = Utils.UnixTimeStamp();
+			List<ConnectionInfo> connections = GetConnectionsToPing();
+
+			foreach (ConnectionInfo infoConnection in connections)
+			{
+				int deltaValid = GetPingerDelayValid(infoConnection);
+
+				if ((OlderCheckDate == 0) || (OlderCheckDate > infoConnection.LastPingResult))
+					OlderCheckDate = infoConnection.LastPingResult;
+
+				if ((LatestCheckDate == 0) || (LatestCheckDate < infoConnection.LastPingResult))
+					LatestCheckDate = infoConnection.LastPingResult;
+
+				if ((infoConnection.CanPing()) && (timeNow - infoConnection.LastPingResult > deltaValid))
+					Invalid++;
+			}
+
+			Valid = (Invalid == 0);
+		}
+
+		public int GetInvalid()
+		{
+			UpdateStats();
+			return Invalid;
 		}
 
 		public bool GetEnabled()
@@ -159,6 +229,7 @@ namespace Eddie.Core.Jobs
 				foreach (ConnectionInfo infoServer in Engine.Instance.Connections.Values)
 					infoServer.InvalidatePingResults();
 			}
+			BroadcastStatus();
 		}
 
 		public void PingResult(ConnectionInfo infoServer, PingReply reply)
@@ -197,6 +268,7 @@ namespace Eddie.Core.Jobs
 					infoServer.Ping = (infoServer.Ping + result) / 2;
 			}
 			Engine.Instance.MarkServersListUpdated();
+			m_needBroadcast = true;
 		}
 
 		void OnPingCompleted(object sender, PingCompletedEventArgs e)
@@ -206,39 +278,10 @@ namespace Eddie.Core.Jobs
 			PingResult(infoServer, e.Reply);
 		}
 
-		public PingerStats GetStats()
-		{
-			PingerStats stats = new PingerStats();
-
-			Int64 timeNow = Utils.UnixTimeStamp();
-
-			int iTotal = 0;
-
-			List<ConnectionInfo> connections = GetConnectionsToPing();
-
-			foreach (ConnectionInfo infoConnection in connections)
-			{
-				int deltaValid = GetPingerDelayValid(infoConnection);
-
-				if ((stats.OlderCheckDate == 0) || (stats.OlderCheckDate > infoConnection.LastPingResult))
-					stats.OlderCheckDate = infoConnection.LastPingResult;
-
-				if ((stats.LatestCheckDate == 0) || (stats.LatestCheckDate < infoConnection.LastPingResult))
-					stats.LatestCheckDate = infoConnection.LastPingResult;
-
-				iTotal++;
-				if ((infoConnection.CanPing()) && (timeNow - infoConnection.LastPingResult > deltaValid))
-					stats.Invalid++;
-			}
-
-			stats.Valid = (stats.Invalid == 0);
-
-			return stats;
-		}
-
 		public bool GetValid()
 		{
-			return GetStats().Valid;
+			UpdateStats();
+			return Valid;
 		}
 
 		public List<ConnectionInfo> GetConnectionsToPing()

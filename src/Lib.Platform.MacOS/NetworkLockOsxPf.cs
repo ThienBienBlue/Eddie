@@ -220,11 +220,35 @@ namespace Eddie.Platform.MacOS
 			if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ping"))
 			{
 				pf += "# Allow ICMP\n";
-				pf += "pass quick proto icmp\n"; // 2.9
+				//pf += "pass quick proto icmp\n"; // 2.9-2.24.6
+				pf += "pass quick inet proto icmp icmp-type echoreq\n";
+				pf += "pass quick inet proto icmp icmp-type echorep\n";
 
 				// Old macOS throw "unknown protocol icmp6". We don't known from when, so use icmp6 if High Sierra and above.
 				if (Platform.Instance.GetVersion().VersionAboveOrEqual("10.13"))
-					pf += "pass quick proto icmp6 all\n"; // 2.14.0
+				{
+					//pf += "pass quick proto icmp6 all\n"; // 2.14.0-2.24.6
+					pf += "pass quick inet6 proto icmp6 icmp6-type echoreq\n";
+					pf += "pass quick inet6 proto icmp6 icmp6-type echorep\n";
+				}
+			}
+
+			if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp"))
+			{
+				// Old macOS throw "unknown protocol icmp6". We don't known from when, so use icmp6 if High Sierra and above.
+				// Some old version don't recognize some icmp6-type names, so we use code (for example 137 and not 'redirect')
+				if (Platform.Instance.GetVersion().VersionAboveOrEqual("10.13"))
+				{
+					pf += "# Allow NDP\n";
+					pf += "pass quick inet6 proto icmp6 from fe80::/10 icmp6-type 134\n"; // 134: routeradv
+					pf += "pass quick inet6 proto icmp6 from fe80::/10 icmp6-type 135\n"; // 135: neighbrsol
+					pf += "pass quick inet6 proto icmp6 from fe80::/10 icmp6-type 137\n"; // 137: redirect
+					pf += "pass quick inet6 proto icmp6 icmp6-type 136\n"; // 136: neighbradv
+
+					pf += "pass quick inet6 proto icmp6 from any to ff02::2 icmp6-type 133\n"; // 133: routersol
+					pf += "pass quick inet6 proto icmp6 from any to ff02::1:ff00:0/104 icmp6-type 135\n"; // 135: neighbrsol
+					pf += "pass quick inet6 proto icmp6 from any to fe80::/10 icmp6-type 136\n"; // 136: neighbradv
+				}
 			}
 
 			IpAddresses ipsAllowlistIncoming = GetIpsAllowlistIncoming();

@@ -78,8 +78,8 @@ namespace Eddie.Core
 			None = 0,
 			Stats = 1,
 			Full = 2,
-			MainMessage = 3, // TOCLEAN?
-			Log = 4 // TOCLEAN?
+			MainMessage = 3,
+			Log = 4
 		}
 
 		private List<ActionService> m_actionsList = new List<ActionService>();
@@ -248,7 +248,7 @@ namespace Eddie.Core
 
 				if (LanguageManager.Init() == false)
 				{
-					Logs.Log(LogType.Fatal, "Fatal: Unable to locate resources files");
+					Logs.Log(LogType.Fatal, "Fatal: Unable to locate resources files (" + GetPathResources() + ")");
 					return false;
 				}
 
@@ -921,7 +921,10 @@ namespace Eddie.Core
 			if (message != "")
 			{
 				if (IsConnected())
-					throw new Exception("Unexpected status.");
+				{
+					//throw new Exception("Unexpected status.");
+					//Logs.LogWarning("UNEXPECTED:" + message);
+				}
 			}
 
 			// lock (this) // TOCLEAN, removed in 2.21.8
@@ -1235,12 +1238,12 @@ namespace Eddie.Core
 					{
 						if (m_jobsManager.Latency != null)
 						{
-							Stats.UpdateValue("Pinger", PingerStats().ToString());
+							Stats.UpdateValue("Pinger", m_jobsManager.Latency.GetStatsString());
 						}
 
 						if (m_jobsManager.Discover != null)
 						{
-							Stats.UpdateValue("Discovery", m_jobsManager.Discover.GetStatsString().ToString());
+							Stats.UpdateValue("Discovery", m_jobsManager.Discover.GetStatsString());
 						}
 					}
 
@@ -1591,12 +1594,7 @@ namespace Eddie.Core
 
 		public int PingerInvalid()
 		{
-			return m_jobsManager.Latency.GetStats().Invalid;
-		}
-
-		public PingerStats PingerStats()
-		{
-			return m_jobsManager.Latency.GetStats();
+			return m_jobsManager.Latency.GetInvalid();
 		}
 
 		public bool IsLogged()

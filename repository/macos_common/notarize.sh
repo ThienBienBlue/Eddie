@@ -4,20 +4,20 @@
 
 set -euo pipefail
 
-realpath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
+#realpath() {
+#    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+#}
+#SCRIPTDIR=$(dirname $(realpath "$0"))
+SCRIPTDIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 APPLE_NOTARYTOOL_FILEPATH=$1
 
-SCRIPTDIR=$(dirname $(realpath "$0"))
-
-if test -f "${SCRIPTDIR}/../signing/apple-dev-id.txt"; then 
+if test -f "${EDDIESIGNINGDIR}/apple-dev-id.txt"; then 
     
     # Remember: ensure .txt files are UTF8 without BOM
-    APPLE_NOTARYTOOL_APPLEID=$(<${SCRIPTDIR}/../signing/apple-notarytool-appleid.txt)
-    APPLE_NOTARYTOOL_TEAMID=$(<${SCRIPTDIR}/../signing/apple-notarytool-teamid.txt)
-    APPLE_NOTARYTOOL_PASSWORD=$(<${SCRIPTDIR}/../signing/apple-notarytool-password.txt)    
+    APPLE_NOTARYTOOL_APPLEID=$(<${EDDIESIGNINGDIR}/apple-notarytool-appleid.txt)
+    APPLE_NOTARYTOOL_TEAMID=$(<${EDDIESIGNINGDIR}/apple-notarytool-teamid.txt)
+    APPLE_NOTARYTOOL_PASSWORD=$(<${EDDIESIGNINGDIR}/apple-notarytool-password.txt)    
 
     echo "Notarization..."
     

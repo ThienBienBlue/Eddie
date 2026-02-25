@@ -153,9 +153,17 @@ namespace Eddie.Platform.Linux
 
 				if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ping"))
 				{
-					AddRule(rules, "ipv4", "add rule ip filter INPUT icmp type echo-request counter accept");
-
+					AddRule(rules, "ipv4", "add rule ip filter INPUT icmp type echo-request counter accept");					
 					AddRule(rules, "ipv6", "add rule ip6 filter INPUT meta l4proto ipv6-icmp counter accept");
+				}
+
+				if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp"))
+				{
+					// Some old version don't recognize some icmp6-type names, so we use code (for example 137 and not 'redirect')
+					//AddRule(rules, "ipv6", "add rule ip6 filter INPUT ip6 saddr fe80::/10 icmpv6 type { nd-router-advert, nd-neighbor-solicit, nd-redirect } ip6 hoplimit 255 counter accept");
+					AddRule(rules, "ipv6", "add rule ip6 filter INPUT ip6 saddr fe80::/10 icmpv6 type { 134, 135, 137 } ip6 hoplimit 255 counter accept");
+					//AddRule(rules, "ipv6", "add rule ip6 filter INPUT icmpv6 type nd-neighbor-advert ip6 hoplimit 255 counter accept");
+					AddRule(rules, "ipv6", "add rule ip6 filter INPUT icmpv6 type 136 ip6 hoplimit 255 counter accept");
 				}
 
 				// Input - Disable processing of any RH0 packet which could allow a ping-pong of packets
@@ -263,6 +271,13 @@ namespace Eddie.Platform.Linux
 				{
 					AddRule(rules, "ipv4", "add rule ip filter OUTPUT icmp type echo-reply counter accept");
 					AddRule(rules, "ipv6", "add rule ip6 filter OUTPUT meta l4proto ipv6-icmp counter accept");
+				}
+
+				if (Engine.Instance.ProfileOptions.GetBool("netlock.allow_ndp"))
+				{
+					AddRule(rules, "ipv6", "add rule ip6 filter OUTPUT ip6 daddr ff02::2 icmpv6 type nd-router-solicit ip6 hoplimit 255 counter accept");
+					AddRule(rules, "ipv6", "add rule ip6 filter OUTPUT ip6 daddr ff02::1:ff00:0/104 icmpv6 type nd-neighbor-solicit ip6 hoplimit 255 counter accept");
+					AddRule(rules, "ipv6", "add rule ip6 filter OUTPUT ip6 daddr fe80::/10 icmpv6 type nd-neighbor-advert ip6 hoplimit 255 counter accept");
 				}
 
 				// Allow TUN
